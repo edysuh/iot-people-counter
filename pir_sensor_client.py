@@ -12,11 +12,12 @@ def appendUnique(lst, x):
 		lst.append(x)
 	return lst
 
-
 try:
 	options = ibmiotf.application.ParseConfigFile("/home/pi/player_count/device.cfg")
-	options["deviceid"] = options["id"]
-	options["id"] = "aaa" + options["id"]
+	#options["deviceid"] = options["id"]
+	#print options["deviceid"]
+	print options
+	#options["id"] = "aaa" + options["id"]
 	client = ibmiotf.application.Client(options)
 	print "try to connect to IoT"
 	client.connect()
@@ -28,6 +29,7 @@ try:
 	GPIO.setup(32, GPIO.IN)         #Read output from PIR motion sensor
 
 	counter = 0
+	basetime = time.time()
 
 	while True:
 		i=GPIO.input(7)
@@ -59,14 +61,19 @@ try:
 					else:
 						print "EXIT"
 						counter -= 1
-						break
-					json_data = json.dumps(counter)
-					client.publishEvent("raspberrypi",options["deviceId"],"counter","json",json_data)
+						break	
 				else:
 					print "WTF" 							 
 		else:
-			print "sensors are not at 0"
-			print "counter is at ", counter
+			if time.time() > basetime + 5:
+				basetime = time.time()
+				data = {}
+				data["counter"]=counter
+				print data
+				json_data = json.dumps(data)
+				client.publishEvent("raspberry",options["id"],"counter","json",json_data)
+				print "sensors are not at 0"
+				print "counter is at ", counter
 		time.sleep(1)
 
 except ibmiotf.ConnectionException as e:
